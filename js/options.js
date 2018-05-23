@@ -14,7 +14,8 @@ function restoreOptions() {
       'fontSize': "small",
       'skritterTLD': "com",
       'zhuyin': "no",
-      'grammar': "yes"
+      'grammar': "yes",
+      'dictlanguage': "en"
     }
   });
   optionsPromise.then((storage) => {
@@ -56,6 +57,12 @@ function restoreOptions() {
     } else {
       document.optform.grammar[0].selected = true;
     }
+
+    if (options.dictlanguage == 'de') {
+      document.optform.dictlanguage[1].selected = true;
+    } else {
+      document.optform.dictlanguage[0].selected = true;
+    }
   });
 }
 
@@ -66,7 +73,8 @@ function saveOptions() {
     'fontSize': document.optform.fontSize.value,
     'skritterTLD': document.optform.skritterTLD.value,
     'zhuyin': document.optform.zhuyin.value,
-    'grammar': document.optform.grammar.value
+    'grammar': document.optform.grammar.value,
+    'dictlanguage': document.optform.dictlanguage.value
   };
   let setting = browser.storage.sync.set({
     options

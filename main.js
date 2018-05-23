@@ -4,8 +4,6 @@
         https://chrome.google.com/extensions/detail/kkmlkkjojmombglmlpbpapmhcaljjkde
         Modified work Copyright (C) 2017 Leonard Lausen
         https://github.com/leezu/zhongwen
-		Modified (again) work 2018 Curt Seeling
-		https://github.com/CNurt/zhongwen/tree/german
 
         ---
 
@@ -58,8 +56,8 @@ var zhongwenMain = {
 
     tabIDs: {},
 
-    loadDictionary: async function() {
-      let dictData = await loadDictData();
+    loadDictionary: async function(language) {
+      let dictData = await loadDictData(language);
       return new ZhongwenDictionary(...dictData);
     },
 
@@ -82,7 +80,8 @@ var zhongwenMain = {
                         'fontSize': "small",
                         'skritterTLD': "com",
                         'zhuyin': "no",
-                        'grammar': "yes"
+                        'grammar': "yes",
+                        'dictlanguage': "en"
                     }
                 });
                 optionsPromise.then((storage) => {
@@ -95,55 +94,65 @@ var zhongwenMain = {
         });
     },
 
-  enable: function(tab) {
-    let optionsPromise = browser.storage.sync.get({
-      options: {
-        'popupcolor': 'yellow',
-        'tonecolors': 'yes',
-        'fontSize': 'small',
-        'skritterTLD': 'com',
-        'zhuyin': 'no',
-        'grammar': 'yes'
-      }
-    })
-    let dictionaryPromise = zhongwenMain.loadDictionary()
-    let enabled = 1
-    let enablePromise = browser.storage.local.set({enabled})
-
-    Promise.all([optionsPromise, dictionaryPromise, enablePromise]).then(
-      ([storage, dictionary, enabled]) => {
-
-        this.dict = dictionary
-
-        // Send message to current tab to add listeners and create stuff
-        if (tab !== undefined) {
-          browser.tabs.sendMessage(tab.id, {
-            type: 'enable',
-            config: storage.options
-          }).catch(reportError)
-
-          browser.tabs.sendMessage(tab.id, {
-            type: 'showPopup',
-            isHelp: true
-          }).catch(reportError)
+    enable: function(tab) {
+      let optionsPromise = browser.storage.sync.get({
+        options: {
+          'popupcolor': 'yellow',
+          'tonecolors': 'yes',
+          'fontSize': 'small',
+          'skritterTLD': 'com',
+          'zhuyin': 'no',
+          'grammar': 'yes',
+          'dictlanguage': 'en'
         }
-
-        browser.browserAction.setBadgeBackgroundColor({
-          'color': [255, 0, 0, 255]
-        })
-
-        browser.browserAction.setBadgeText({
-          'text': 'On'
-        })
-
-        /*browser.contextMenus.create({ // page context menu
-          title: 'word list',
-          id: 'wordlist-page',
-          onclick: zhongwenMain.wordlistTab,
-          contexts: ['browser_action']//'page']
-        })*/
       })
-  },
+
+      let languagePromise = optionsPromise.then((storage) => {
+        return storage.options.dictlanguage;
+      });
+
+      Promise.all([languagePromise]).then(
+        ([language]) => {
+          let dictionaryPromise = zhongwenMain.loadDictionary(language)
+          let enabled = 1
+          let enablePromise = browser.storage.local.set({enabled})
+
+          Promise.all([optionsPromise, dictionaryPromise, enablePromise]).then(
+            ([storage, dictionary, enabled]) => {
+
+              this.dict = dictionary
+
+              // Send message to current tab to add listeners and create stuff
+              if (tab !== undefined) {
+                browser.tabs.sendMessage(tab.id, {
+                  type: 'enable',
+                  config: storage.options
+                }).catch(reportError)
+
+                browser.tabs.sendMessage(tab.id, {
+                  type: 'showPopup',
+                  isHelp: true
+                }).catch(reportError)
+              }
+
+              browser.browserAction.setBadgeBackgroundColor({
+                'color': [255, 0, 0, 255]
+              })
+
+              browser.browserAction.setBadgeText({
+                'text': 'On'
+              })
+
+              /*browser.contextMenus.create({ // page context menu
+                title: 'Open word list',
+                id: 'wordlist-page',
+                onclick: zhongwenMain.wordlistTab,
+                contexts: ['page']
+              })*/
+            })
+          }
+        )
+    },
 
     disable: function(tab) {
       let enabled = 0;
@@ -178,16 +187,16 @@ var zhongwenMain = {
       browser.contextMenus.remove("wordlist-page");
     },
 
-  enableToggle: function(tab) {
-    let enabledPromise = browser.storage.local.get({enabled: 0});
-    enabledPromise.then((storage) => {
-      if (storage.enabled == 1) {
-        zhongwenMain.disable(tab);
-      } else {
-        zhongwenMain.enable(tab);
-      }
-    });
-  },
+    enableToggle: function(tab) {
+      let enabledPromise = browser.storage.local.get({enabled: 0});
+      enabledPromise.then((storage) => {
+        if (storage.enabled == 1) {
+          zhongwenMain.disable(tab);
+        } else {
+          zhongwenMain.enable(tab);
+        }
+      });
+    },
 
     search: function(text) {
 
@@ -206,51 +215,52 @@ var zhongwenMain = {
 
     },
 
-  wordlistTab: function() {
-    var url = browser.extension.getURL("/wordlist.html");
-    var tabID = zhongwenMain.tabIDs['wordlist'];
-    if (tabID) {
-      browser.tabs.get(tabID, function(tab) {
-        if (tab && (tab.url.substr(-13) == 'wordlist.html')) {
-          browser.tabs.reload(tabID);
-          browser.tabs.update(tabID, {active: true});
-        } else {
-          browser.tabs.create({
-            url: url
-          }, function(tab) {
-            zhongwenMain.tabIDs['wordlist'] = tab.id;
-            browser.tabs.reload(tab.id);
-          });
+    wordlistTab: function() {
+      var url = browser.extension.getURL("/wordlist.html");
+      var tabID = zhongwenMain.tabIDs['wordlist'];
+      if (tabID) {
+        browser.tabs.get(tabID, function(tab) {
+          if (tab && (tab.url.substr(-13) == 'wordlist.html')) {
+            browser.tabs.reload(tabID);
+            browser.tabs.update(tabID, {active: true});
+          } else {
+            browser.tabs.create({
+              url: url
+            }, function(tab) {
+              zhongwenMain.tabIDs['wordlist'] = tab.id;
+              browser.tabs.reload(tab.id);
+            });
+          }
+        });
+      } else {
+        browser.tabs.create({ url: url }, function(tab) {
+          zhongwenMain.tabIDs['wordlist'] = tab.id;
+          browser.tabs.reload(tab.id); });
         }
-      });
-    } else {
-      browser.tabs.create({ url: url }, function(tab) {
-        zhongwenMain.tabIDs['wordlist'] = tab.id;
-        browser.tabs.reload(tab.id); });
-    }
-  },
+      },
 
-  optionsTab: function() {
-    var url = browser.extension.getURL("/options.html");
-    var tabID = zhongwenMain.tabIDs['options'];
-    if (tabID) {
-      browser.tabs.get(tabID, function(tab) {
-        if (tab && (tab.url.substr(-13) == 'options.html')) {
-          browser.tabs.reload(tabID);
-          browser.tabs.update(tabID, {active: true});
-        } else {
-          browser.tabs.create({
-            url: url
-          }, function(tab) {
-            zhongwenMain.tabIDs['options'] = tab.id;
-            browser.tabs.reload(tab.id);
-          });
+    optionsTab: function() {
+      var url = browser.extension.getURL("/options.html");
+      var tabID = zhongwenMain.tabIDs['options'];
+      if (tabID) {
+        browser.tabs.get(tabID, function(tab) {
+          if (tab && (tab.url.substr(-13) == 'options.html')) {
+            browser.tabs.reload(tabID);
+            browser.tabs.update(tabID, {active: true});
+          } else {
+            browser.tabs.create({
+              url: url
+            }, function(tab) {
+              zhongwenMain.tabIDs['options'] = tab.id;
+              browser.tabs.reload(tab.id);
+            });
+          }
+        });
+      } else {
+        browser.tabs.create({ url: url }, function(tab) {
+          zhongwenMain.tabIDs['options'] = tab.id;
+          browser.tabs.reload(tab.id); });
         }
-      });
-    } else {
-      browser.tabs.create({ url: url }, function(tab) {
-        zhongwenMain.tabIDs['options'] = tab.id;
-        browser.tabs.reload(tab.id); });
-    }
-  }
+      }
+
 };

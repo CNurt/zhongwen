@@ -839,7 +839,7 @@ var zhongwenContent = {
             rp = this.findNextTextNode(rp.parentNode, rp);
             ro = 0;
         }
-        
+
         // The case where the text before div is empty.
         if(rp && rp.parentNode != ev.target) {
             rp = zhongwenContent.findNextTextNode(rp.parentNode, rp);

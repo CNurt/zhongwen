@@ -108,15 +108,15 @@ Promise.all([enabledPromise]).then(([storage]) => {
 })
 
 browser.contextMenus.create({ // top icon
-    title: 'word list',
-    id: 'wordlist-browser_action',
-    onclick: zhongwenMain.wordlistTab,
-    contexts: ['browser_action']
+  title: 'word list',
+  id: 'wordlist-browser_action',
+  onclick: zhongwenMain.wordlistTab,
+  contexts: ['browser_action']
 })
 
 browser.contextMenus.create({ // top icon
-    title: 'options',
-    id: 'options-browser_action',
-    onclick: zhongwenMain.optionsTab,
-    contexts: ['browser_action']
+  title: 'options',
+  id: 'options-browser_action',
+  onclick: zhongwenMain.optionsTab,
+  contexts: ['browser_action']
 })

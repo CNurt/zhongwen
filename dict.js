@@ -45,15 +45,24 @@
         when modifying any of the files.
 
 */
-async function loadDictData() {
-  let wordDict = fetch(browser.extension.getURL(
-    "data/handedict.u8")).then(
-    processText);
-  let wordIndex = fetch(browser.extension.getURL(
-    "data/handedict.idx")).then(
-    processText);
-  let grammarKeywords = fetch(browser.extension.getURL(
-    "data/grammarKeywordsMin.json")).then(processJson);
+
+async function loadDictData(language) {
+  // default is English
+  let dict = "data/cedict_ts.u8"
+  let index = "data/cedict.idx"
+  let grammar = "data/grammarKeywordsMin.json"
+
+  switch (language) {
+    case 'de':
+      dict = "data/handedict.u8"
+      index = "data/handedict.idx"
+      break;
+    default:
+      break;
+  }
+  let wordDict = fetch(browser.extension.getURL(dict)).then(processText);
+  let wordIndex = fetch(browser.extension.getURL(index)).then(processText);
+  let grammarKeywords = fetch(browser.extension.getURL(grammar)).then(processJson);
 
   return Promise.all([wordDict, wordIndex, grammarKeywords]);
 }
