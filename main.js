@@ -134,7 +134,8 @@ var zhongwenMain = {
               })
 
               browser.browserAction.setBadgeText({
-                'text': 'On'
+                // 'text': 'On'
+                'text': storage.options.dictlanguage
               })
 
               /*browser.contextMenus.create({ // page context menu
@@ -220,8 +221,7 @@ var zhongwenMain = {
     swapLang: function() {
       zhongwenMain.optionsPromiseFun()
       .then((storage) => {
-        let lang = storage.options.dictlanguage;
-        if (lang == 'en')
+        if (storage.options.dictlanguage == 'en')
           storage.options.dictlanguage = 'de';
         else
           storage.options.dictlanguage = 'en';
