@@ -88,11 +88,11 @@ browser.runtime.onMessage.addListener(function(request, sender, response) {
     }
 });
 
-browser.browserAction.onClicked.addListener(zhongwenMain.enableToggle)
-browser.tabs.onActivated.addListener(zhongwenMain.onTabActivated)
-browser.tabs.onUpdated.addListener(zhongwenMain.onTabUpdated)
+browser.browserAction.onClicked.addListener(zhongwenMain.enableToggle);
+browser.tabs.onActivated.addListener(zhongwenMain.onTabActivated);
+browser.tabs.onUpdated.addListener(zhongwenMain.onTabUpdated);
 
-let enabledPromise = browser.storage.local.get({enabled: 0}) //this is only used after re-/start of browser or extension
+let enabledPromise = browser.storage.local.get({enabled: 0}); //this is only used after re-/start of browser or extension
 Promise.all([enabledPromise]).then(([storage]) => {
     var tab // Can't retrieve tab object in background script
     if (storage.enabled === 1) {
@@ -105,18 +105,51 @@ Promise.all([enabledPromise]).then(([storage]) => {
             'text': 'On'
         })
     }
-})
+});
 
 browser.contextMenus.create({ // top icon
   title: 'word list',
   id: 'wordlist-browser_action',
   onclick: zhongwenMain.wordlistTab,
   contexts: ['browser_action']
-})
+});
 
 browser.contextMenus.create({ // top icon
   title: 'options',
   id: 'options-browser_action',
   onclick: zhongwenMain.optionsTab,
   contexts: ['browser_action']
-})
+});
+
+browser.contextMenus.create({ // top icon
+  title: 'swap Language',
+  id: 'swapLang-browser_action',
+  // onclick: zhongwenMain.enable(function(sender){return browser.tabs.get(tabId)}),
+//   onclick: zhongwenMain.enable(tab),//zhongwenMain.enable(sender.tab), //TODO fix FIX .id
+  contexts: ['browser_action']
+});
+
+browser.contextMenus.onClicked.addListener(function(info, tab) {
+    if (info.menuItemId == 'swapLang-browser_action') {
+      zhongwenMain.swapLang();
+    }
+});
+
+browser.storage.onChanged.addListener(
+  (changes, area) => {
+    // listens to changes in options.dictlanguage and then reloads the other dictionary
+    if ((area == 'sync') && (changes.options.newValue.dictlanguage !== changes.options.oldValue.dictlanguage)) {
+      browser.storage.local.get()
+      .then((storage) => {
+        if (storage.enabled == 1)
+            browser.tabs.getCurrent()
+            .then((tabInfo) => { zhongwenMain.reloadDict(tabInfo); });
+      });
+  }}
+);
+
+function getActiveTab() {
+  // returns Pormise
+  return browser.tabs.query({ currentWindow: true, active: true })
+      .then(function (tabs) { return tabs[0] });
+};

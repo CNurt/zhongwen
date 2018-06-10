@@ -61,6 +61,20 @@ var zhongwenMain = {
       return new ZhongwenDictionary(...dictData);
     },
 
+    optionsPromiseFun: function() {
+      return browser.storage.sync.get({
+        options: {
+          'popupcolor'  : 'yellow',
+          'tonecolors'  : 'yes',
+          'fontSize'    : 'small',
+          'skritterTLD' : 'com',
+          'zhuyin'      : 'no',
+          'grammar'     : 'yes',
+          'dictlanguage': 'en'
+        }
+      })
+    },
+
     // The callback for onActivated.
     // Just sends a message to the tab to enable itself if it hasn't already.
     onTabActivated: function (activeInfo) {
@@ -73,17 +87,7 @@ var zhongwenMain = {
         let enabledPromise = browser.storage.local.get({enabled: 0});
         enabledPromise.then((storage) => {
             if (storage.enabled === 1) {
-                let optionsPromise = browser.storage.sync.get({
-                    options: {
-                        'popupcolor': "yellow",
-                        'tonecolors': "yes",
-                        'fontSize': "small",
-                        'skritterTLD': "com",
-                        'zhuyin': "no",
-                        'grammar': "yes",
-                        'dictlanguage': "en"
-                    }
-                });
+                let optionsPromise = zhongwenMain.optionsPromiseFun();
                 optionsPromise.then((storage) => {
                     browser.tabs.sendMessage(tabId, {
                         type: "enable",
@@ -95,17 +99,7 @@ var zhongwenMain = {
     },
 
     enable: function(tab) {
-      let optionsPromise = browser.storage.sync.get({
-        options: {
-          'popupcolor': 'yellow',
-          'tonecolors': 'yes',
-          'fontSize': 'small',
-          'skritterTLD': 'com',
-          'zhuyin': 'no',
-          'grammar': 'yes',
-          'dictlanguage': 'en'
-        }
-      })
+      let optionsPromise = zhongwenMain.optionsPromiseFun()
 
       let languagePromise = optionsPromise.then((storage) => {
         return storage.options.dictlanguage;
@@ -151,7 +145,7 @@ var zhongwenMain = {
               })*/
             })
           }
-        )
+        );
     },
 
     disable: function(tab) {
@@ -213,6 +207,27 @@ var zhongwenMain = {
 
         return entry;
 
+    },
+
+    reloadDict: function() {
+      getActiveTab()
+      .then( (tab) => {
+        zhongwenMain.disable(tab);
+        zhongwenMain.enable(tab);
+      });
+    },
+
+    swapLang: function() {
+      zhongwenMain.optionsPromiseFun()
+      .then((storage) => {
+        let lang = storage.options.dictlanguage;
+        if (lang == 'en')
+          storage.options.dictlanguage = 'de';
+        else
+          storage.options.dictlanguage = 'en';
+        let options = storage.options;
+        browser.storage.sync.set({options});
+      });
     },
 
     wordlistTab: function() {

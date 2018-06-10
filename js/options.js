@@ -64,7 +64,7 @@ function restoreOptions() {
       document.optform.dictlanguage[0].selected = true;
     }
   });
-}
+};
 
 function saveOptions() {
   let options = {
@@ -79,7 +79,7 @@ function saveOptions() {
   let setting = browser.storage.sync.set({
     options
   });
-}
+};
 
 document.addEventListener('DOMContentLoaded',restoreOptions);
 //document.querySelector("form").addEventListener("submit",saveOptions);
